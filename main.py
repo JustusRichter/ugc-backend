@@ -1,20 +1,20 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import uuid
 from typing import Optional
 
 import anthropic
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 # ---------------------------------------------------------------------------
-# Whisper model cache (loaded lazily on first request)
+# Whisper model cache
 # ---------------------------------------------------------------------------
 _whisper_model = None
 
@@ -28,7 +28,7 @@ def get_whisper_model():
 
 
 # ---------------------------------------------------------------------------
-# In-memory job store  (fine for single-instance Railway deployment)
+# In-memory job store
 # ---------------------------------------------------------------------------
 jobs: dict = {}
 
@@ -46,19 +46,20 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------------------
-# Models
+# Request models
 # ---------------------------------------------------------------------------
 class AnalyzeRequest(BaseModel):
-    ad_id: str
+    ad_id: Optional[str] = None
+    video_url: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
-# Claude prompt template
+# Claude prompt
 # ---------------------------------------------------------------------------
 CLAUDE_PROMPT = """\
 Du bist ein erfahrener UGC-Ad-Stratege und Direct-Response-Marketing-Experte.
 
-Analysiere das folgende Transkript einer Facebook Ad (Ad-ID: {ad_id}) und erstelle eine vollständige Analyse auf Deutsch.
+Analysiere das folgende Transkript einer Video-Ad (Quelle: {label}) und erstelle eine vollständige Analyse auf Deutsch.
 
 TRANSKRIPT:
 {transcript}
@@ -114,18 +115,42 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Text davor oder dan
 
 
 # ---------------------------------------------------------------------------
-# Core processing  (runs as background task)
+# Shared core: transcribe + Claude  (raises on error)
 # ---------------------------------------------------------------------------
-def process_ad(job_id: str, ad_id: str) -> None:
-    def update(step: str, progress: int, **kwargs):
-        jobs[job_id].update({"step": step, "progress": progress, **kwargs})
+def _transcribe_and_analyze(job_id: str, video_path: str, label: str) -> None:
+    def update(step: str, progress: int):
+        jobs[job_id].update({"step": step, "progress": progress})
 
+    update("Audio wird transkribiert...", 40)
+    model = get_whisper_model()
+    segments, _ = model.transcribe(video_path, beam_size=5)
+    transcript = "".join(seg.text for seg in segments).strip()
+    if not transcript:
+        transcript = "[Kein gesprochener Text erkannt – möglicherweise nur Musik/Hintergrundgeräusche]"
+
+    update("KI-Analyse läuft...", 70)
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise Exception("ANTHROPIC_API_KEY Umgebungsvariable ist nicht gesetzt.")
+
+    result = call_claude(api_key, transcript, label)
+
+    jobs[job_id].update({
+        "status": "completed",
+        "step": "Analyse abgeschlossen!",
+        "progress": 100,
+        "result": result,
+        "transcript": transcript,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Background task: download via yt-dlp, then analyze
+# ---------------------------------------------------------------------------
+def process_via_ytdlp(job_id: str, url: str, label: str) -> None:
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
-
-            # ── Step 1: Download video via yt-dlp ──────────────────────────
-            update("Video wird heruntergeladen...", 10)
-            ad_url = f"https://www.facebook.com/ads/library/?id={ad_id}"
+            jobs[job_id].update({"step": "Video wird heruntergeladen...", "progress": 10})
 
             dl = subprocess.run(
                 [
@@ -134,7 +159,7 @@ def process_ad(job_id: str, ad_id: str) -> None:
                     "--format", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
                     "--merge-output-format", "mp4",
                     "-o", os.path.join(tmpdir, "video.%(ext)s"),
-                    ad_url,
+                    url,
                 ],
                 capture_output=True,
                 text=True,
@@ -142,82 +167,59 @@ def process_ad(job_id: str, ad_id: str) -> None:
             )
 
             video_file = next(
-                (
-                    os.path.join(tmpdir, f)
-                    for f in os.listdir(tmpdir)
-                    if os.path.isfile(os.path.join(tmpdir, f))
-                ),
+                (os.path.join(tmpdir, f) for f in os.listdir(tmpdir)
+                 if os.path.isfile(os.path.join(tmpdir, f))),
                 None,
             )
 
             if not video_file or dl.returncode != 0:
-                stderr = (dl.stderr or "")[:600]
+                stderr = (dl.stderr or "")[:800]
                 raise Exception(
-                    "Video-Download fehlgeschlagen. Mögliche Ursachen:\n"
-                    "• Die Ad-ID ist falsch oder nicht mehr aktiv\n"
-                    "• Das Video ist nicht öffentlich zugänglich\n"
-                    "• Facebook hat den Zugriff blockiert\n\n"
+                    "Video-Download fehlgeschlagen.\n\n"
+                    "Mögliche Ursachen:\n"
+                    "• Facebook blockiert automatische Downloads (häufig bei Ad Library)\n"
+                    "• Die URL ist nicht mehr gültig oder privat\n\n"
+                    "Tipp: Nutze stattdessen die Option 'Video-URL' mit einem direkten \n"
+                    "Link zum Video, oder lade die Datei direkt hoch ('Datei hochladen').\n\n"
                     f"Technische Details: {stderr}"
                 )
 
-            # ── Step 2: Transcribe with faster-whisper ──────────────────────
-            update("Audio wird transkribiert...", 40)
-            model = get_whisper_model()
-            segments, _ = model.transcribe(video_file, beam_size=5)
-            transcript = "".join(seg.text for seg in segments).strip()
-
-            if not transcript:
-                transcript = "[Kein gesprochener Text erkannt – möglicherweise nur Musik/Hintergrundgeräusche]"
-
-            # ── Step 3: Analyze with Claude ─────────────────────────────────
-            update("KI-Analyse läuft...", 70)
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if not api_key:
-                raise Exception("ANTHROPIC_API_KEY Umgebungsvariable ist nicht gesetzt.")
-
-            result = call_claude(api_key, transcript, ad_id)
-
-            jobs[job_id].update(
-                {
-                    "status": "completed",
-                    "step": "Analyse abgeschlossen!",
-                    "progress": 100,
-                    "result": result,
-                    "transcript": transcript,
-                }
-            )
+            _transcribe_and_analyze(job_id, video_file, label)
 
     except Exception as exc:
-        jobs[job_id].update(
-            {
-                "status": "error",
-                "step": "Fehler aufgetreten",
-                "error": str(exc),
-            }
-        )
+        jobs[job_id].update({"status": "error", "step": "Fehler aufgetreten", "error": str(exc)})
 
 
-def call_claude(api_key: str, transcript: str, ad_id: str) -> dict:
+# ---------------------------------------------------------------------------
+# Background task: process already-saved file (cleans up tmpdir afterwards)
+# ---------------------------------------------------------------------------
+def process_uploaded_file(job_id: str, video_path: str, tmpdir: str) -> None:
+    try:
+        jobs[job_id].update({"step": "Datei wird verarbeitet...", "progress": 15})
+        _transcribe_and_analyze(job_id, video_path, "hochgeladen")
+    except Exception as exc:
+        jobs[job_id].update({"status": "error", "step": "Fehler aufgetreten", "error": str(exc)})
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# Claude call
+# ---------------------------------------------------------------------------
+def call_claude(api_key: str, transcript: str, label: str) -> dict:
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=4096,
-        messages=[
-            {
-                "role": "user",
-                "content": CLAUDE_PROMPT.format(transcript=transcript, ad_id=ad_id),
-            }
-        ],
+        messages=[{"role": "user", "content": CLAUDE_PROMPT.format(transcript=transcript, label=label)}],
     )
     text = message.content[0].text
 
-    # Try direct JSON parse
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # Strip markdown fences
     m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
     if m:
         try:
@@ -225,7 +227,6 @@ def call_claude(api_key: str, transcript: str, ad_id: str) -> dict:
         except json.JSONDecodeError:
             pass
 
-    # Last resort: extract outermost {}
     s, e = text.find("{"), text.rfind("}") + 1
     if s != -1 and e > s:
         return json.loads(text[s:e])
@@ -234,17 +235,9 @@ def call_claude(api_key: str, transcript: str, ad_id: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# API routes
+# Job helper
 # ---------------------------------------------------------------------------
-@app.post("/analyze")
-async def analyze_ad(request: AnalyzeRequest, background_tasks: BackgroundTasks):
-    ad_id = request.ad_id.strip()
-    if not re.match(r"^\d{10,20}$", ad_id):
-        raise HTTPException(
-            status_code=400,
-            detail="Ungültige Ad-ID. Bitte nur die numerische ID eingeben (10–20 Stellen).",
-        )
-
+def _new_job() -> tuple[str, dict]:
     job_id = str(uuid.uuid4())
     jobs[job_id] = {
         "status": "processing",
@@ -254,7 +247,71 @@ async def analyze_ad(request: AnalyzeRequest, background_tasks: BackgroundTasks)
         "transcript": None,
         "error": None,
     }
-    background_tasks.add_task(process_ad, job_id, ad_id)
+    return job_id, jobs[job_id]
+
+
+# ---------------------------------------------------------------------------
+# API routes
+# ---------------------------------------------------------------------------
+@app.post("/analyze")
+async def analyze_ad(request: AnalyzeRequest, background_tasks: BackgroundTasks):
+    """Accepts either ad_id (Facebook Ad Library) or video_url (any yt-dlp URL)."""
+    if request.ad_id:
+        ad_id = request.ad_id.strip()
+        if not re.match(r"^\d{10,20}$", ad_id):
+            raise HTTPException(status_code=400,
+                detail="Ungültige Ad-ID. Bitte nur die numerische ID eingeben (10–20 Stellen).")
+        url = f"https://www.facebook.com/ads/library/?id={ad_id}"
+        label = f"Ad-ID {ad_id}"
+
+    elif request.video_url:
+        url = request.video_url.strip()
+        if not url.startswith(("http://", "https://")):
+            raise HTTPException(status_code=400, detail="Ungültige URL.")
+        label = url
+
+    else:
+        raise HTTPException(status_code=400, detail="Bitte ad_id oder video_url angeben.")
+
+    job_id, _ = _new_job()
+    background_tasks.add_task(process_via_ytdlp, job_id, url, label)
+    return {"job_id": job_id}
+
+
+@app.post("/upload")
+async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    """Accept a direct video file upload."""
+    if not file.content_type or not file.content_type.startswith("video/"):
+        # Also allow generic octet-stream (some browsers send this for video files)
+        if file.content_type != "application/octet-stream":
+            raise HTTPException(status_code=400,
+                detail="Bitte eine Video-Datei hochladen (MP4, MOV, AVI, WebM, ...).")
+
+    MAX_SIZE = 200 * 1024 * 1024  # 200 MB
+    tmpdir = tempfile.mkdtemp()
+    try:
+        filename = file.filename or "upload.mp4"
+        safe_name = re.sub(r"[^\w.\-]", "_", filename)
+        video_path = os.path.join(tmpdir, safe_name)
+
+        size = 0
+        with open(video_path, "wb") as out:
+            while chunk := await file.read(1024 * 1024):  # 1 MB chunks
+                size += len(chunk)
+                if size > MAX_SIZE:
+                    out.close()
+                    shutil.rmtree(tmpdir, ignore_errors=True)
+                    raise HTTPException(status_code=413,
+                        detail="Datei zu groß. Maximale Größe: 200 MB.")
+                out.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=f"Upload fehlgeschlagen: {exc}")
+
+    job_id, _ = _new_job()
+    background_tasks.add_task(process_uploaded_file, job_id, video_path, tmpdir)
     return {"job_id": job_id}
 
 
@@ -270,7 +327,6 @@ async def health():
     return {"status": "ok"}
 
 
-# Serve frontend
 @app.get("/")
 async def root():
     return FileResponse("frontend/index.html")
