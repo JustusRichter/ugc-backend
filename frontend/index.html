@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UGC Ad Analyzer — KI-gestützte Facebook Ad Analyse</title>
+  <meta name="description" content="Analysiere Facebook Ads in Sekunden. Erhalte vollständige KI-Analyse, fertiges Replika-Script und Tool-Prompts für HeyGen, ElevenLabs, Kling AI & CapCut." />
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #080810;
+      --bg-card:     #0f0f1a;
+      --bg-card2:    #141428;
+      --border:      rgba(255,255,255,0.07);
+      --border-acc:  rgba(124,58,237,0.4);
+      --accent:      #7c3aed;
+      --accent-l:    #a78bfa;
+      --accent-glow: rgba(124,58,237,0.25);
+      --txt:         #e2e8f0;
+      --txt-sec:     #94a3b8;
+      --txt-muted:   #4a5568;
+      --green:       #10b981;
+      --yellow:      #f59e0b;
+      --red:         #ef4444;
+      --blue:        #3b82f6;
+      --radius:      14px;
+      --radius-sm:   8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(8,8,16,0.95);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+    .logo span { color: var(--accent-l); }
+
+    .logo-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: var(--accent-glow);
+      border: 1px solid var(--border-acc);
+      color: var(--accent-l);
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── Hero ────────────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 72px 24px 56px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-glow);
+      border: 1px solid var(--border-acc);
+      color: var(--accent-l);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      letter-spacing: 0.3px;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 2.75rem);
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -1px;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 .grad {
+      background: linear-gradient(135deg, var(--accent-l) 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      color: var(--txt-sec);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ── Input Card ──────────────────────────────────────────────── */
+    .input-section {
+      max-width: 640px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+
+    .input-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.4);
+    }
+
+    .input-card label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--txt-sec);
+      margin-bottom: 10px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-row input {
+      flex: 1;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--txt);
+      font-size: 1.05rem;
+      padding: 14px 18px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .input-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-row input::placeholder { color: var(--txt-muted); font-family: inherit; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 14px 28px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover {
+      background: #6d28d9;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .input-hint {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: var(--txt-muted);
+    }
+
+    .input-hint strong { color: var(--txt-sec); }
+
+    /* ── Features strip ──────────────────────────────────────────── */
+    .features {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin: 0 auto 64px;
+      padding: 0 24px;
+      max-width: 760px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--txt-sec);
+    }
+
+    .feature .icon { font-size: 1rem; }
+
+    /* ── Progress section ────────────────────────────────────────── */
+    .progress-section {
+      max-width: 640px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+      display: none;
+    }
+
+    .progress-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+    }
+
+    .progress-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .spinner {
+      width: 22px; height: 22px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .progress-step-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--txt);
+    }
+
+    .progress-track {
+      background: var(--bg-card2);
+      border-radius: 100px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-l));
+      border-radius: 100px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .steps-list {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .step-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--bg-card2);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+    }
+
+    .step-item.active .step-dot {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      box-shadow: 0 0 12px var(--accent-glow);
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    .step-item.done .step-dot {
+      border-color: var(--green);
+      background: rgba(16,185,129,0.15);
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 8px var(--accent-glow); }
+      50% { box-shadow: 0 0 20px var(--accent-glow); }
+    }
+
+    .step-label {
+      font-size: 0.7rem;
+      color: var(--txt-muted);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .step-item.active .step-label { color: var(--accent-l); }
+    .step-item.done .step-label { color: var(--green); }
+
+    /* ── Error box ───────────────────────────────────────────────── */
+    .error-box {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      max-width: 640px;
+      margin: 0 auto 32px;
+      display: none;
+    }
+
+    .error-box .error-title {
+      font-weight: 700;
+      color: var(--red);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .error-box .error-msg {
+      font-size: 0.9rem;
+      color: #fca5a5;
+      white-space: pre-wrap;
+    }
+
+    .btn-reset {
+      margin-top: 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--txt-sec);
+      font-size: 0.85rem;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--accent-l); }
+
+    /* ── Results section ─────────────────────────────────────────── */
+    .results-section {
+      max-width: 900px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+      display: none;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .results-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* ── Tabs ────────────────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 28px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 100px;
+      background: transparent;
+      border: none;
+      border-radius: 7px;
+      color: var(--txt-sec);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover { color: var(--txt); background: var(--bg-card2); }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── Cards ───────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--txt-muted);
+      margin-bottom: 16px;
+    }
+
+    /* ── Rating + Meta row ───────────────────────────────────────── */
+    .meta-row {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .meta-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    .rating-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid;
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .rating-badge .rating-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .rating-A { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.1); }
+    .rating-B { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.1); }
+    .rating-C { border-color: var(--yellow); color: var(--yellow); background: rgba(245,158,11,0.1); }
+    .rating-D { border-color: #f97316; color: #f97316; background: rgba(249,115,22,0.1); }
+    .rating-E, .rating-F { border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.1); }
+
+    .meta-cell { }
+    .meta-cell .meta-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--txt-muted);
+      margin-bottom: 6px;
+    }
+    .meta-cell .meta-value {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--txt);
+    }
+
+    /* Funnel badge */
+    .funnel-chip {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .funnel-ToFu { background: rgba(124,58,237,0.15); color: var(--accent-l); border: 1px solid var(--border-acc); }
+    .funnel-MoFu { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .funnel-BoFu { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+
+    /* ── Lists ───────────────────────────────────────────────────── */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .tag-green { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.25); }
+    .tag-red   { background: rgba(239,68,68,0.1);   color: #f87171;       border: 1px solid rgba(239,68,68,0.2); }
+    .tag-blue  { background: rgba(59,130,246,0.12); color: #93c5fd;       border: 1px solid rgba(59,130,246,0.25); }
+    .tag-muted { background: var(--bg-card2);        color: var(--txt-sec); border: 1px solid var(--border); }
+
+    /* ── Info blocks ─────────────────────────────────────────────── */
+    .info-block {
+      background: var(--bg-card2);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--txt-sec);
+      line-height: 1.65;
+    }
+
+    /* ── Script block ────────────────────────────────────────────── */
+    .script-box {
+      position: relative;
+    }
+
+    .script-text {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      font-size: 0.92rem;
+      line-height: 1.75;
+      color: var(--txt);
+      white-space: pre-wrap;
+      max-height: 480px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--txt-sec);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent-l); }
+    .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+    /* ── Script parts grid ───────────────────────────────────────── */
+    .script-parts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .script-part {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+    }
+
+    .script-part .part-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-l);
+      margin-bottom: 6px;
+    }
+
+    .script-part .part-text {
+      font-size: 0.85rem;
+      color: var(--txt-sec);
+      line-height: 1.55;
+    }
+
+    /* ── Hook variant cards ──────────────────────────────────────── */
+    .hook-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .hook-card:hover { border-color: var(--border-acc); }
+
+    .hook-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .hook-type-badge {
+      background: var(--accent-glow);
+      border: 1px solid var(--border-acc);
+      color: var(--accent-l);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+    }
+
+    .hook-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--txt);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .hook-why {
+      font-size: 0.83rem;
+      color: var(--txt-sec);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .hook-why strong { color: var(--txt); }
+
+    /* ── Tool prompt cards ───────────────────────────────────────── */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .tool-grid { grid-template-columns: 1fr; }
+    }
+
+    .tool-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: border-color 0.2s;
+    }
+    .tool-card:hover { border-color: var(--border-acc); }
+
+    .tool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .tool-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .tool-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .tool-heygen    .tool-icon { background: rgba(124,58,237,0.15); }
+    .tool-elevenlabs .tool-icon { background: rgba(59,130,246,0.15); }
+    .tool-kling     .tool-icon { background: rgba(245,158,11,0.15); }
+    .tool-capcut    .tool-icon { background: rgba(16,185,129,0.15); }
+
+    .tool-prompt-text {
+      font-size: 0.85rem;
+      color: var(--txt-sec);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    /* ── Transcript section ──────────────────────────────────────── */
+    .transcript-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--txt-sec);
+      font-size: 0.83rem;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .transcript-toggle:hover { border-color: var(--accent); color: var(--accent-l); }
+
+    .transcript-box {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      font-size: 0.85rem;
+      color: var(--txt-sec);
+      line-height: 1.7;
+      margin-top: 12px;
+      max-height: 240px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    /* ── New analysis btn ────────────────────────────────────────── */
+    .btn-new {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--txt-sec);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-new:hover { border-color: var(--accent); color: var(--accent-l); }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 40px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--txt-muted);
+    }
+
+    /* ── Utilities ───────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .section-gap { margin-bottom: 20px; }
+    .text-muted { color: var(--txt-muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ───────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">UGC<span>Analyzer</span></div>
+  <span class="logo-badge">Beta</span>
+</header>
+
+<!-- ── Hero ─────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-pill">✦ Powered by Claude AI + Whisper</div>
+  <h1>Facebook Ads analysieren &amp;<br><span class="grad">Scripts generieren</span></h1>
+  <p>Gib eine Facebook Ad-ID ein – in Sekunden erhältst du eine vollständige KI-Analyse, ein fertiges Replika-Script und Tool-Prompts für deine Produktion.</p>
+</div>
+
+<!-- ── Input ─────────────────────────────────────────────────────── -->
+<div class="input-section" id="input-section">
+  <div class="input-card">
+    <label for="ad-id-input">Facebook Ad-ID eingeben</label>
+    <div class="input-row">
+      <input
+        type="text"
+        id="ad-id-input"
+        placeholder="z.B. 896723930028260"
+        inputmode="numeric"
+        maxlength="20"
+        autocomplete="off"
+      />
+      <button class="btn-primary" id="analyze-btn" onclick="startAnalysis()">
+        Analysieren →
+      </button>
+    </div>
+    <p class="input-hint">
+      <strong>Wo finde ich die Ad-ID?</strong>
+      Öffne die
+      <a href="https://www.facebook.com/ads/library/" target="_blank" style="color:var(--accent-l)">Facebook Ad Library</a>,
+      suche eine Ad und kopiere die Zahl aus der URL hinter <code style="color:var(--accent-l)">?id=</code>
+    </p>
+  </div>
+
+  <!-- Feature strip -->
+  <div class="features" style="margin-top:20px; margin-bottom:0">
+    <div class="feature"><span class="icon">📥</span> Video-Download</div>
+    <div class="feature"><span class="icon">🎙️</span> KI-Transkription</div>
+    <div class="feature"><span class="icon">📊</span> Hook-Analyse</div>
+    <div class="feature"><span class="icon">📝</span> Replika-Script</div>
+    <div class="feature"><span class="icon">🛠️</span> Tool-Prompts</div>
+  </div>
+</div>
+
+<!-- ── Progress ──────────────────────────────────────────────────── -->
+<div class="progress-section" id="progress-section">
+  <div class="progress-card">
+    <div class="progress-header">
+      <div class="spinner" id="spinner"></div>
+      <span class="progress-step-text" id="progress-text">Analyse wird gestartet…</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:5%"></div>
+    </div>
+    <div class="steps-list">
+      <div class="step-item" id="step-1">
+        <div class="step-dot">📥</div>
+        <span class="step-label">Download</span>
+      </div>
+      <div class="step-item" id="step-2">
+        <div class="step-dot">🎙️</div>
+        <span class="step-label">Transkription</span>
+      </div>
+      <div class="step-item" id="step-3">
+        <div class="step-dot">🤖</div>
+        <span class="step-label">KI-Analyse</span>
+      </div>
+      <div class="step-item" id="step-4">
+        <div class="step-dot">✅</div>
+        <span class="step-label">Fertig</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Error box ─────────────────────────────────────────────────── -->
+<div class="error-box" id="error-box">
+  <div class="error-title">⚠ Fehler bei der Analyse</div>
+  <div class="error-msg" id="error-msg"></div>
+  <button class="btn-reset" onclick="resetApp()">↩ Neue Analyse starten</button>
+</div>
+
+<!-- ── Results ───────────────────────────────────────────────────── -->
+<div class="results-section" id="results-section">
+
+  <div class="results-header">
+    <div class="results-title">Analyse-Ergebnis</div>
+    <button class="btn-new" onclick="resetApp()">↩ Neue Analyse</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('analyse')">📊 Analyse</button>
+    <button class="tab-btn" onclick="switchTab('script')">📝 Script</button>
+    <button class="tab-btn" onclick="switchTab('hooks')">🎣 Hooks</button>
+    <button class="tab-btn" onclick="switchTab('tools')">🛠️ Tool-Prompts</button>
+  </div>
+
+  <!-- ── Tab: Analyse ──────────────────────────────────────────── -->
+  <div class="tab-pane active" id="tab-analyse">
+
+    <!-- Rating + Meta -->
+    <div class="card">
+      <div class="card-title">Bewertung &amp; Einordnung</div>
+      <div class="meta-row" id="meta-row">
+        <!-- filled by JS -->
+      </div>
+      <div id="bewertung-text" class="info-block"></div>
+    </div>
+
+    <!-- Hook -->
+    <div class="card">
+      <div class="card-title">Hook-Analyse</div>
+      <div id="hook-typ" style="font-size:1rem;font-weight:700;color:var(--accent-l);margin-bottom:10px"></div>
+      <div id="hook-beschreibung" class="info-block" style="margin-top:0"></div>
+    </div>
+
+    <!-- Stärken & Schwächen -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="section-gap">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Stärken</div>
+        <div id="staerken" class="tag-list"></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Schwächen</div>
+        <div id="schwaechen" class="tag-list"></div>
+      </div>
+    </div>
+
+    <!-- Psychological triggers + Audience -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px" class="section-gap">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Psychologische Trigger</div>
+        <div id="trigger-list" class="tag-list"></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Zielgruppe</div>
+        <div id="zielgruppe-text" style="font-size:0.88rem;color:var(--txt-sec);line-height:1.65"></div>
+      </div>
+    </div>
+
+    <!-- Overall -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">Gesamtbewertung</div>
+      <div id="gesamtbewertung" class="info-block" style="margin-top:0"></div>
+    </div>
+
+    <!-- Transcript toggle -->
+    <div style="margin-top:8px">
+      <button class="transcript-toggle" onclick="toggleTranscript()">
+        <span>🎙️</span> Transkript anzeigen
+      </button>
+      <div id="transcript-box" class="transcript-box hidden"></div>
+    </div>
+
+  </div><!-- /tab-analyse -->
+
+  <!-- ── Tab: Script ───────────────────────────────────────────── -->
+  <div class="tab-pane" id="tab-script">
+
+    <div class="card">
+      <div class="card-title">Script-Bausteine</div>
+      <div class="script-parts" id="script-parts">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px">Vollständiges Replika-Script</div>
+      <p class="text-muted" style="margin-bottom:14px">
+        Ersetze die Platzhalter <strong style="color:var(--accent-l)">[DEINE MARKE]</strong>,
+        <strong style="color:var(--accent-l)">[DEIN PRODUKT]</strong> und
+        <strong style="color:var(--accent-l)">[PREIS]</strong> mit deinen eigenen Angaben.
+      </p>
+      <div class="script-box">
+        <button class="copy-btn" id="copy-script-btn" onclick="copyScript()">
+          📋 Kopieren
+        </button>
+        <div class="script-text" id="full-script"></div>
+      </div>
+    </div>
+
+  </div><!-- /tab-script -->
+
+  <!-- ── Tab: Hooks ────────────────────────────────────────────── -->
+  <div class="tab-pane" id="tab-hooks">
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">3 Hook-Varianten für deine Brand</div>
+      <p class="text-muted">Diese Hooks basieren auf der analysierten Ad, sind aber für deine eigene Marke angepasst.</p>
+    </div>
+
+    <div id="hooks-container">
+      <!-- filled by JS -->
+    </div>
+
+  </div><!-- /tab-hooks -->
+
+  <!-- ── Tab: Tools ────────────────────────────────────────────── -->
+  <div class="tab-pane" id="tab-tools">
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Tool-Prompts für deine Produktion</div>
+      <p class="text-muted">Kopiere die Prompts direkt in die jeweiligen Tools.</p>
+    </div>
+
+    <div class="tool-grid" id="tool-grid">
+      <!-- filled by JS -->
+    </div>
+
+  </div><!-- /tab-tools -->
+
+</div><!-- /results-section -->
+
+<!-- ── Footer ────────────────────────────────────────────────────── -->
+<footer>
+  <p>UGC Ad Analyzer &middot; Powered by Claude AI &amp; Whisper &middot; Alle Analysen werden serverseitig verarbeitet</p>
+</footer>
+
+<!-- ── JavaScript ─────────────────────────────────────────────────── -->
+<script>
+  // ── State ──────────────────────────────────────────────────────
+  let pollInterval = null;
+  let currentTranscript = '';
+
+  // ── Tab switching ──────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // ── Start analysis ─────────────────────────────────────────────
+  async function startAnalysis() {
+    const adId = document.getElementById('ad-id-input').value.trim();
+    if (!adId) return alert('Bitte gib eine Ad-ID ein.');
+    if (!/^\d{10,20}$/.test(adId)) {
+      return alert('Ungültige Ad-ID. Bitte nur Zahlen eingeben (10–20 Stellen).');
+    }
+
+    setUI('loading');
+
+    try {
+      const res = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ad_id: adId })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || 'Unbekannter Fehler');
+      }
+
+      const { job_id } = await res.json();
+      startPolling(job_id);
+
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  // ── Polling ────────────────────────────────────────────────────
+  function startPolling(jobId) {
+    pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/status/' + jobId);
+        const data = await res.json();
+
+        updateProgress(data.step, data.progress);
+
+        if (data.status === 'completed') {
+          clearInterval(pollInterval);
+          currentTranscript = data.transcript || '';
+          renderResults(data.result);
+          setUI('results');
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          showError(data.error || 'Unbekannter Fehler');
+        }
+      } catch (e) {
+        // network hiccup, keep polling
+      }
+    }, 1500);
+  }
+
+  // ── Progress update ────────────────────────────────────────────
+  function updateProgress(step, progress) {
+    document.getElementById('progress-text').textContent = step || '…';
+    document.getElementById('progress-fill').style.width = (progress || 5) + '%';
+
+    const p = progress || 0;
+    setStep(1, p >= 10 && p < 40 ? 'active' : p >= 40 ? 'done' : '');
+    setStep(2, p >= 40 && p < 70 ? 'active' : p >= 70 ? 'done' : '');
+    setStep(3, p >= 70 && p < 100 ? 'active' : p >= 100 ? 'done' : '');
+    setStep(4, p >= 100 ? 'done' : '');
+  }
+
+  function setStep(n, state) {
+    const el = document.getElementById('step-' + n);
+    el.classList.remove('active', 'done');
+    if (state) el.classList.add(state);
+  }
+
+  // ── UI state ───────────────────────────────────────────────────
+  function setUI(state) {
+    document.getElementById('input-section').style.display    = state === 'input'   ? '' : 'none';
+    document.getElementById('progress-section').style.display = state === 'loading' ? 'block' : 'none';
+    document.getElementById('error-box').style.display        = state === 'error'   ? 'block' : 'none';
+    document.getElementById('results-section').style.display  = state === 'results' ? 'block' : 'none';
+    if (state === 'input') {
+      document.getElementById('analyze-btn').disabled = false;
+      document.getElementById('ad-id-input').value = '';
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('error-msg').textContent = msg;
+    setUI('error');
+  }
+
+  function resetApp() {
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    setUI('input');
+  }
+
+  // ── Transcript toggle ──────────────────────────────────────────
+  function toggleTranscript() {
+    const box = document.getElementById('transcript-box');
+    if (box.classList.contains('hidden')) {
+      box.textContent = currentTranscript || '(kein Transkript verfügbar)';
+      box.classList.remove('hidden');
+    } else {
+      box.classList.add('hidden');
+    }
+  }
+
+  // ── Copy script ────────────────────────────────────────────────
+  function copyScript() {
+    const text = document.getElementById('full-script').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-script-btn');
+      btn.textContent = '✅ Kopiert!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 Kopieren';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  function copyText(text, btnEl) {
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btnEl.textContent;
+      btnEl.textContent = '✅';
+      setTimeout(() => { btnEl.textContent = orig; }, 1500);
+    });
+  }
+
+  // ── Rating helper ──────────────────────────────────────────────
+  function ratingClass(r) {
+    return 'rating-' + (r || 'C').replace(/[^A-F]/g, 'C');
+  }
+
+  // ── Render results ─────────────────────────────────────────────
+  function renderResults(d) {
+    if (!d) return;
+
+    const a = d.analyse || {};
+    const r = d.replika_script || {};
+    const hooks = d.hook_varianten || [];
+    const tools = d.tool_prompts || {};
+
+    // ── Analyse tab ──────────────────────────────────────────────
+
+    // Meta row
+    const funnel = a.funnel_stage || 'ToFu';
+    document.getElementById('meta-row').innerHTML = `
+      <div class="rating-badge ${ratingClass(a.bewertung)}">
+        ${a.bewertung || '?'}
+        <span class="rating-label">Note</span>
+      </div>
+      <div class="meta-cell">
+        <div class="meta-label">Funnel-Stage</div>
+        <div class="meta-value">
+          <span class="funnel-chip funnel-${funnel}">${funnel}</span>
+          <div style="font-size:0.78rem;color:var(--txt-muted);margin-top:5px">${esc(a.funnel_erklaerung || '')}</div>
+        </div>
+      </div>
+      <div class="meta-cell">
+        <div class="meta-label">Hook-Typ</div>
+        <div class="meta-value">${esc(a.hook_typ || '—')}</div>
+      </div>
+    `;
+
+    document.getElementById('bewertung-text').textContent = a.bewertung_begruendung || '';
+
+    document.getElementById('hook-typ').textContent = a.hook_typ || '';
+    document.getElementById('hook-beschreibung').textContent = a.hook_beschreibung || '';
+
+    // Stärken
+    document.getElementById('staerken').innerHTML =
+      (a.staerken || []).map(s => `<span class="tag tag-green">${esc(s)}</span>`).join('');
+
+    // Schwächen
+    document.getElementById('schwaechen').innerHTML =
+      (a.schwaechen || []).map(s => `<span class="tag tag-red">${esc(s)}</span>`).join('');
+
+    // Trigger
+    document.getElementById('trigger-list').innerHTML =
+      (a.psychologische_trigger || []).map(t => `<span class="tag tag-blue">${esc(t)}</span>`).join('');
+
+    // Zielgruppe
+    document.getElementById('zielgruppe-text').textContent = a.zielgruppe || '';
+
+    // Gesamtbewertung
+    document.getElementById('gesamtbewertung').textContent = a.gesamtbewertung || '';
+
+    // ── Script tab ───────────────────────────────────────────────
+    const parts = [
+      { label: 'Hook', key: 'hook' },
+      { label: 'Problem-Agitation', key: 'problem_agitation' },
+      { label: 'Lösung', key: 'loesung' },
+      { label: 'Social Proof', key: 'social_proof' },
+      { label: 'Call to Action', key: 'cta' },
+    ];
+
+    document.getElementById('script-parts').innerHTML = parts.map(p => `
+      <div class="script-part">
+        <div class="part-label">${p.label}</div>
+        <div class="part-text">${esc(r[p.key] || '—')}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('full-script').textContent = r.vollstaendiges_script || '';
+
+    // ── Hooks tab ────────────────────────────────────────────────
+    document.getElementById('hooks-container').innerHTML = hooks.map(h => `
+      <div class="hook-card">
+        <div class="hook-header">
+          <span class="hook-type-badge">${esc(h.typ || '')}</span>
+          <button class="copy-btn" style="position:static" onclick="copyText(${JSON.stringify(h.text || '')}, this)">📋</button>
+        </div>
+        <div class="hook-text">"${esc(h.text || '')}"</div>
+        <div class="hook-why"><strong>Warum das konvertiert:</strong> ${esc(h.warum || '')}</div>
+      </div>
+    `).join('');
+
+    // ── Tools tab ────────────────────────────────────────────────
+    const toolDefs = [
+      { key: 'heygen',      name: 'HeyGen',      icon: '🎭', cls: 'tool-heygen' },
+      { key: 'elevenlabs',  name: 'ElevenLabs',  icon: '🎙️', cls: 'tool-elevenlabs' },
+      { key: 'kling_ai',    name: 'Kling AI',    icon: '🎬', cls: 'tool-kling' },
+      { key: 'capcut',      name: 'CapCut',       icon: '✂️', cls: 'tool-capcut' },
+    ];
+
+    document.getElementById('tool-grid').innerHTML = toolDefs.map(t => `
+      <div class="tool-card ${t.cls}">
+        <div class="tool-header">
+          <div class="tool-name">
+            <div class="tool-icon">${t.icon}</div>
+            ${t.name}
+          </div>
+          <button class="copy-btn" style="position:static" onclick="copyText(${JSON.stringify(tools[t.key] || '')}, this)">📋 Kopieren</button>
+        </div>
+        <div class="tool-prompt-text">${esc(tools[t.key] || '—')}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── HTML escape ────────────────────────────────────────────────
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Allow Enter key in input ───────────────────────────────────
+  document.getElementById('ad-id-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startAnalysis();
+  });
+
+  // ── Initial state ──────────────────────────────────────────────
+  setUI('input');
+</script>
+
+</body>
+</html>
