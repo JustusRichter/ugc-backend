@@ -748,7 +748,7 @@
   function renderResults(d) {
     if (!d) return;
     const a = d.analyse || {};
-    const r = d.replika_script || {};
+    const r = d.recording_script || d.replika_script || {};
     const hooks = d.hook_varianten || [];
     const tools = d.tool_prompts || {};
 
@@ -781,18 +781,12 @@
     document.getElementById('gesamtbewertung').textContent = a.gesamtbewertung || '';
 
     // Script
-    const parts = [
-      {label:'Hook', key:'hook'},
-      {label:'Problem-Agitation', key:'problem_agitation'},
-      {label:'Lösung', key:'loesung'},
-      {label:'Social Proof', key:'social_proof'},
-      {label:'Call to Action', key:'cta'},
-    ];
-    document.getElementById('script-parts').innerHTML = parts.map(p=>`
-      <div class="script-part">
-        <div class="part-label">${p.label}</div>
-        <div class="part-text">${esc(r[p.key]||'—')}</div>
-      </div>`).join('');
+    const hinweis = r.hinweis || 'Ersetze [DEINE MARKE], [DEIN PRODUKT] und [PREIS] mit deinen Angaben.';
+    document.getElementById('script-parts').innerHTML = `
+      <div class="script-part" style="grid-column:1/-1;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 16px;">
+        <div class="part-label" style="color:var(--accent-l)">💡 HINWEIS</div>
+        <div class="part-text" style="color:var(--txt-sec)">${esc(hinweis)}</div>
+      </div>`;
     document.getElementById('full-script').textContent = r.vollstaendiges_script || '';
 
     // Hooks
