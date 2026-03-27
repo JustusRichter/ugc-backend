@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# v3 — three input modes: Ad-ID, Video-URL, File Upload
+# v4 — explicit COPY per file to bypass Railway layer cache
 # System dependencies: ffmpeg (required by yt-dlp + whisper) + curl for healthcheck
 RUN apt-get update && apt-get install -y \
     ffmpeg \
@@ -9,12 +9,18 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install Python dependencies
+# Install Python dependencies (separate layer for caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy backend
+COPY main.py .
+
+# Copy frontend explicitly (own layer — always refreshed)
+COPY frontend/ ./frontend/
+
+# Copy config files
+COPY railway.json .
 
 # Expose default port (Railway injects $PORT at runtime)
 EXPOSE 8000

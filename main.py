@@ -327,6 +327,11 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/version")
+async def version():
+    return {"version": "v4", "features": ["ad-id", "video-url", "file-upload"]}
+
+
 @app.get("/")
 async def root():
     return FileResponse("frontend/index.html")
