@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# v3 — three input modes: Ad-ID, Video-URL, File Upload
 # System dependencies: ffmpeg (required by yt-dlp + whisper) + curl for healthcheck
 RUN apt-get update && apt-get install -y \
     ffmpeg \
