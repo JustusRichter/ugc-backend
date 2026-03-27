@@ -23,7 +23,7 @@ def get_whisper_model():
     global _whisper_model
     if _whisper_model is None:
         from faster_whisper import WhisperModel
-        _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+        _whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
     return _whisper_model
 
 
@@ -57,60 +57,44 @@ class AnalyzeRequest(BaseModel):
 # Claude prompt
 # ---------------------------------------------------------------------------
 CLAUDE_PROMPT = """\
-Du bist ein erfahrener UGC-Ad-Stratege und Direct-Response-Marketing-Experte.
+Du bist ein Top-Direct-Response-Texter. Analysiere das Transkript dieser Video-Ad und schreibe ein BESSERES Script, das man sofort aufnehmen kann.
 
-Analysiere das folgende Transkript einer Video-Ad (Quelle: {label}) und erstelle eine vollständige Analyse auf Deutsch.
-
-TRANSKRIPT:
+TRANSKRIPT (Quelle: {label}):
 {transcript}
 
-Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Text davor oder danach, nur reines JSON):
+Antworte NUR mit einem validen JSON-Objekt (kein Text davor oder danach):
 
 {{
   "analyse": {{
-    "hook_typ": "Typ des Hooks (z.B. Problem-Hook, Curiosity-Hook, Social-Proof-Hook, Story-Hook, Shock-Hook, Transformation-Hook)",
-    "hook_beschreibung": "2-3 Sätze: Warum dieser Hook-Typ, wie er eingesetzt wird und wie wirkungsvoll er ist",
-    "staerken": ["Stärke 1", "Stärke 2", "Stärke 3", "Stärke 4"],
-    "schwaechen": ["Schwäche 1", "Schwäche 2", "Schwäche 3"],
-    "bewertung": "B",
-    "bewertung_begruendung": "Ausführliche Begründung der Note A-F mit konkreten Verbesserungsvorschlägen",
-    "funnel_stage": "ToFu",
-    "funnel_erklaerung": "Warum genau diese Funnel-Stage (ToFu/MoFu/BoFu) und was das für die Zielseite bedeutet",
-    "zielgruppe": "Detaillierte Zielgruppen-Beschreibung: Alter, Interessen, Probleme, Kaufbereitschaft, Awareness-Level",
-    "psychologische_trigger": ["FOMO", "Social Proof", "Authority", "Scarcity"],
-    "gesamtbewertung": "Zusammenfassende Bewertung der Ad in 2-3 prägnanten Sätzen"
+    "hook_typ": "Konkreter Hook-Typ: z.B. Problem-Hook, Curiosity-Hook, Social-Proof-Hook, Story-Hook, Transformation-Hook",
+    "bewertung": "Note A-F",
+    "bewertung_begruendung": "2-3 Sätze: Was funktioniert, was nicht, warum diese Note",
+    "staerken": ["Stärke 1 – konkret", "Stärke 2 – konkret"],
+    "schwaechen": ["Schwäche 1 – mit Erklärung", "Schwäche 2 – mit Erklärung"],
+    "zielgruppe": "Wer sieht diese Ad? Alter, Problem, Awareness-Level in 2-3 Sätzen",
+    "psychologische_trigger": ["Trigger 1", "Trigger 2", "Trigger 3"]
   }},
-  "replika_script": {{
-    "hook": "Hook-Text mit Platzhaltern [DEINE MARKE], [DEIN PRODUKT]",
-    "problem_agitation": "Problem-Agitation Abschnitt – schmerzhaft und spezifisch",
-    "loesung": "Lösungs-Präsentation mit klarem Nutzenversprechen",
-    "social_proof": "Social-Proof Abschnitt mit konkreten Zahlen/Beispielen",
-    "cta": "Call-to-Action – klar, dringend, handlungsauffordernd",
-    "vollstaendiges_script": "Vollständiger Script-Text zum direkt Ablesen, mindestens 200 Wörter. Verwende [DEINE MARKE], [DEIN PRODUKT], [PREIS], [ANZAHL KUNDEN] als Platzhalter. Conversion-optimiert, natürliche Sprache, professionell."
+  "recording_script": {{
+    "hinweis": "Ersetze [DEINE MARKE], [DEIN PRODUKT], [PREIS], [ERGEBNIS] vor der Aufnahme",
+    "vollstaendiges_script": "Schreibe hier das komplette Script zum direkt Ablesen. Anforderungen: starker Hook in den ersten 3 Sekunden der stoppt, Kernproblem der Zielgruppe direkt benennen, Lösung klar und begeistert präsentieren, konkreten Social Proof einbauen, klarer CTA am Ende. Natürliche gesprochene Sprache, kein Marketing-Deutsch. Mindestens 150 Wörter. BESSER als das Original."
   }},
   "hook_varianten": [
     {{
       "typ": "Problem-Hook",
-      "text": "Vollständiger Hook-Text (2-3 packende Sätze die sofort stoppen)",
-      "warum": "Psychologische Erklärung warum dieser Hook konvertiert"
+      "text": "2-3 Sätze – bereit zum Aufnehmen",
+      "warum": "Kurz: warum dieser Hook funktioniert"
     }},
     {{
       "typ": "Curiosity-Hook",
-      "text": "Vollständiger Hook-Text (2-3 packende Sätze die Neugier wecken)",
-      "warum": "Psychologische Erklärung warum dieser Hook konvertiert"
+      "text": "2-3 Sätze – bereit zum Aufnehmen",
+      "warum": "Kurz: warum dieser Hook funktioniert"
     }},
     {{
       "typ": "Transformation-Hook",
-      "text": "Vollständiger Hook-Text (2-3 packende Sätze über Transformation)",
-      "warum": "Psychologische Erklärung warum dieser Hook konvertiert"
+      "text": "2-3 Sätze – bereit zum Aufnehmen",
+      "warum": "Kurz: warum dieser Hook funktioniert"
     }}
-  ],
-  "tool_prompts": {{
-    "heygen": "Detaillierter HeyGen Avatar-Prompt: Beschreibe Avatar-Typ (Alter, Geschlecht, Ethnie, Kleidungsstil), Setting/Hintergrund, Körpersprache, Energie-Level, Präsentationstempo und emotionalen Ausdruck. Mindestens 80 Wörter.",
-    "elevenlabs": "Detaillierter ElevenLabs Voice-Prompt: Stimm-Charakteristik (männlich/weiblich, Alter, Akzent), Sprechtempo (langsam/mittel/schnell), Emotionslevel (warm/professionell/aufgeregt), Betonungsmuster, Pausen-Timing und empfohlene Voice-IDs. Mindestens 60 Wörter.",
-    "kling_ai": "Detaillierter Kling AI B-Roll Prompt: Beschreibe alle Szenen einzeln mit Kamerawinkel (Close-up/Wide/POV), Beleuchtung, Farbpalette, Bewegungsgeschwindigkeit, visuellen Elementen und Gesamtstil. Mindestens 100 Wörter.",
-    "capcut": "Detaillierte CapCut Editing-Anweisungen: Schnittrhythmus (Cuts pro Sekunde), Caption-Stil (Font, Farbe, Größe, Animations-Typ), Musik-Genre und BPM, Farbkorrektur-Preset, Übergangstypen und konkrete CapCut-Template-Empfehlungen. Mindestens 80 Wörter."
-  }}
+  ]
 }}"""
 
 
